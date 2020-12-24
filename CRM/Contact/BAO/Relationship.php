@@ -2201,37 +2201,25 @@ AND cc.sort_name LIKE '%$name%'";
   }
 
   /**
-   * @inheritdoc
-   */
-  public static function buildOptions($fieldName, $context = NULL, $props = []) {
-    if ($fieldName === 'relationship_type_id') {
-      return self::buildRelationshipTypeOptions($props);
-    }
-
-    return parent::buildOptions($fieldName, $context, $props);
-  }
-
-  /**
    * Builds a list of options available for relationship types
    *
+   * @param string $context
    * @param array $params
    *   - contact_type: Limits by contact type on the "A" side
    *   - relationship_id: Used to find the value for contact type for "B" side.
    *     If contact_a matches provided contact_id then type of contact_b will
    *     be used. Otherwise uses type of contact_a. Must be used with contact_id
    *   - contact_id: Limits by contact types of this contact on the "A" side
-   *   - is_form: Returns array with keys indexed for use in a quickform
    *   - relationship_direction: For relationship types with duplicate names
    *     on both sides, defines which option should be returned, a_b or b_a
    *
    * @return array
    */
-  public static function buildRelationshipTypeOptions($params = []) {
+  public static function buildRelationshipTypeOptions($context, $params = []) {
     $contactId = $params['contact_id'] ?? NULL;
     $direction = CRM_Utils_Array::value('relationship_direction', $params, 'a_b');
     $relationshipId = $params['relationship_id'] ?? NULL;
     $contactType = $params['contact_type'] ?? NULL;
-    $isForm = $params['is_form'] ?? NULL;
     $showAll = FALSE;
 
     // getContactRelationshipType will return an empty set if these are not set
@@ -2244,11 +2232,11 @@ AND cc.sort_name LIKE '%$name%'";
       $direction,
       $relationshipId,
       $contactType,
-      $showAll,
+      FALSE,
       'label'
     );
 
-    if ($isForm) {
+    if ($context !== 'match' && $context !== 'validate') {
       return $labels;
     }
 

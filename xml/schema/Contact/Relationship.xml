@@ -58,11 +58,14 @@
     <type>int unsigned</type>
     <title>Relationship Type</title>
     <required>true</required>
-    <comment>id of the relationship</comment>
+    <comment>Type of relationship</comment>
     <add>1.1</add>
     <html>
       <type>Select</type>
     </html>
+    <pseudoconstant>
+      <callback>CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions</callback>
+    </pseudoconstant>
   </field>
   <foreignKey>
     <name>relationship_type_id</name>

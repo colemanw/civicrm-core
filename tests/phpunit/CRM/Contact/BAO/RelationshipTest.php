@@ -58,13 +58,13 @@ class CRM_Contact_BAO_RelationshipTest extends CiviUnitTestCase {
       'contact_type_b' => 'Organization',
     ]);
 
-    $result = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions(
+    $result = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions('create',
       ['contact_type' => 'Organization']
     );
     $this->assertContains($orgToOrgType, $result);
     $this->assertContains($orgToOrgReverseType, $result);
 
-    $result = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions(
+    $result = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions('create',
       ['contact_type' => 'Individual']
     );
 
@@ -109,7 +109,7 @@ class CRM_Contact_BAO_RelationshipTest extends CiviUnitTestCase {
       'relationship_type_id' => $orgToPersonTypeId,
     ]);
 
-    $options = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions([
+    $options = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions('create', [
       'relationship_id' => (string) $relationship['id'],
       'contact_id' => $individual['id'],
     ]);
@@ -122,7 +122,7 @@ class CRM_Contact_BAO_RelationshipTest extends CiviUnitTestCase {
     $this->assertNotContains($personToPersonType, $options);
     $this->assertNotContains($personToPersonReverseType, $options);
 
-    $options = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions([
+    $options = CRM_Contact_BAO_Relationship::buildRelationshipTypeOptions('create', [
       'contact_id' => $individual['id'],
     ]);
 
