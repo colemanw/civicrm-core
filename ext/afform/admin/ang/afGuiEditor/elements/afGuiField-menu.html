@@ -9,7 +9,7 @@
 <li ng-if="$ctrl.fieldDefn.input_type === 'Existing'" title="{{:: ts('Use a saved search to filter the autocomplete results') }}">
   <div href ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown">
     <label>{{:: ts('Saved Search:') }}</label>
-    <input class="form-control" crm-entityref="{entity: 'SavedSearch', api: {id_field: 'name', params: {api_entity: $ctrl.getEntity().name}}}" ng-model="getSet('saved_search')" ng-model-options="{getterSetter: true}">
+    <input class="form-control twenty" crm-entityref="{entity: 'SavedSearch', select: {minimumInputLength: 0}, api: {id_field: 'name', params: {api_entity: $ctrl.getEntity().entity}}}" ng-model="getSet('saved_search')" ng-model-options="{getterSetter: true}">
   </div>
 </li>
 <li>
