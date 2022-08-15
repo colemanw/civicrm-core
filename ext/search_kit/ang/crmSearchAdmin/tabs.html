@@ -30,14 +30,14 @@
     <i class="crm-i fa-plus"></i> {{:: ts('Add...') }} <span class="caret"></span>
   </button>
   <ul class="dropdown-menu">
-    <li ng-if="!$ctrl.savedSearch.groups.length">
+    <li ng-if="!$ctrl.savedSearch.groups.length" title="{{:: ts('Group of contacts based on live search results') }}">
       <a href ng-click="$ctrl.addGroup()">
         <i class="crm-i fa-users"></i>
         {{:: ts('Smart Group') }}
       </a>
     </li>
     <li class="dropdown-header">{{:: ts('Display') }}</li>
-    <li ng-repeat="type in ::$ctrl.displayTypes">
+    <li ng-repeat="type in ::$ctrl.displayTypes" title="{{:: type.description }}">
       <a href ng-click="$ctrl.addDisplay(type.id)">
         <i class="crm-i {{:: type.icon }}"></i>
         {{:: type.label }}
