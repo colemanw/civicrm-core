@@ -93,6 +93,7 @@ class DAOGetFieldsAction extends BasicGetFieldsAction {
         'action' => $this->action,
       ])->first();
     }
+    return NULL;
   }
 
   /**

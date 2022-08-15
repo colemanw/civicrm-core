@@ -3,13 +3,19 @@
   {{:: ts('Add') }} <span class="caret"></span>
 </button>
 <ul class="dropdown-menu">
-  <li ng-repeat="(type, col) in $ctrl.parent.colTypes">
+  <li ng-repeat="(type, col) in $ctrl.extraColTypes">
     <a href ng-click="$ctrl.parent.addCol(type)"><i class="fa {{:: col.icon }}"></i> {{:: col.label }}</a>
   </li>
-  <li class="divider" ng-show="$ctrl.parent.hiddenColumns.length"></li>
+  <li class="divider" ng-show="$ctrl.extraColTypes"></li>
   <li ng-repeat="col in $ctrl.parent.hiddenColumns">
     <a href ng-click="$ctrl.parent.restoreCol($index)">
       {{:: $ctrl.parent.getFieldLabel(col.key) }}
+    </a>
+  </li>
+  <li class="divider" ng-show="$ctrl.extraColTypes && !$ctrl.parent.hiddenColumns.length"></li>
+  <li ng-show="!$ctrl.parent.hiddenColumns.length">
+    <a href class="disabled">
+      {{:: ts('No unused columns') }}
     </a>
   </li>
 </ul>

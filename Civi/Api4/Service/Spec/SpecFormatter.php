@@ -216,7 +216,12 @@ class SpecFormatter {
             foreach ($returnFormat as $ret) {
               // Note: our schema is inconsistent about whether `description` fields allow html,
               // but it's usually assumed to be plain text, so we strip_tags() to standardize it.
-              $options[$optionIndex[$item[$keyColumn]]][$ret] = ($ret === 'description' && isset($item[$ret])) ? strip_tags($item[$ret]) : $item[$ret] ?? NULL;
+              $value = ($ret === 'description' && isset($item[$ret])) ? strip_tags($item[$ret]) : $item[$ret] ?? NULL;
+              // Special handling for visibility - an option list option with its own option list!
+              if ($ret === 'visibility' && !empty($item['visibility_id'])) {
+                $value = \CRM_Core_PseudoConstant::getName('CRM_Core_DAO_OptionValue', 'visibility_id', $item['visibility_id']);
+              }
+              $options[$optionIndex[$item[$keyColumn]]][$ret] = $value;
             }
           }
         }

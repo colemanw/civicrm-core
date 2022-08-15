@@ -53,6 +53,7 @@
         ctrl.display.settings.classes = ctrl.display.settings.classes || [];
         // Table can be draggable if the main entity is a SortableEntity.
         ctrl.canBeDraggable = _.includes(searchMeta.getEntity(ctrl.apiEntity).type, 'SortableEntity');
+        ctrl.extraColTypes = ctrl.parent.colTypes;
         ctrl.parent.initColumns({label: true, sortable: true});
       };
 

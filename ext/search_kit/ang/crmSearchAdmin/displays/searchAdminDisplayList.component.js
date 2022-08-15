@@ -42,6 +42,7 @@
             ctrl.display.settings.sort.push([searchMeta.getEntity(ctrl.apiEntity).order_by, 'ASC']);
           }
         }
+        ctrl.extraColTypes = ctrl.parent.colTypes;
         ctrl.parent.initColumns({});
       };
 

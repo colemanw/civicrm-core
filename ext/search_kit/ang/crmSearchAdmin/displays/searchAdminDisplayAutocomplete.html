@@ -1,0 +1,16 @@
+<div class="help-block">
+  {{:: ts('This display configures an autocomplete field which must be added to a form separately.') }}
+</div>
+<fieldset ng-include="'~/crmSearchAdmin/crmSearchAdminDisplaySort.html'"></fieldset>
+<fieldset class="crm-search-admin-edit-columns-wrapper">
+  <legend>
+    {{:: ts('Fields') }}
+    <div ng-include="'~/crmSearchAdmin/displays/common/addColMenu.html'" class="btn-group btn-group-xs"></div>
+  </legend>
+  <div class="crm-search-admin-edit-columns" ng-model="$ctrl.display.settings.columns" ui-sortable="$ctrl.parent.sortableOptions">
+    <fieldset ng-repeat="col in $ctrl.display.settings.columns" class="crm-draggable">
+      <legend><i class="crm-i fa-arrows crm-search-move-icon"></i> {{ $ctrl.parent.getColLabel(col) }}</legend>
+      <div ng-include="'~/crmSearchAdmin/displays/colType/' + col.type + '.html'"></div>
+    </fieldset>
+  </div>
+</fieldset>

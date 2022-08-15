@@ -41,6 +41,10 @@
 
       this.preview = this.stale = false;
 
+      this.$onInit = function() {
+        this.displayType = _.findWhere(CRM.crmSearchAdmin.displayTypes, {id: this.display.type});
+      };
+
       // Extra (non-field) colum types
       this.colTypes = {
         links: {
