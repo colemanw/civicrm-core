@@ -145,7 +145,7 @@ class CRM_Case_Form_Activity_LinkCases {
     //create a link between two cases.
     if ($activityId && $linkCaseID) {
       $caseParams = [
-        'case_id' => $linkCaseID,
+        'case_id' => array_merge($form->_caseId, [$linkCaseID]),
         'activity_id' => $activityId,
       ];
       CRM_Case_BAO_Case::processCaseActivity($caseParams);
