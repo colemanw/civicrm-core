@@ -332,6 +332,24 @@
     <comment>Should the multi-record custom field values be displayed in tab table listing</comment>
     <add>4.5</add>
   </field>
+  <field>
+    <name>fk_entity</name>
+    <type>varchar</type>
+    <title>Entity</title>
+    <length>255</length>
+    <default>NULL</default>
+    <comment>Name of entity being referenced.</comment>
+    <add>5.59</add>
+  </field>
+  <field>
+    <name>settings</name>
+    <type>text</type>
+    <title>Search Display Settings</title>
+    <comment>Configured field settings</comment>
+    <serialize>JSON</serialize>
+    <default>NULL</default>
+    <add>5.59</add>
+  </field>
   <index>
     <name>UI_label_custom_group_id</name>
     <fieldName>label</fieldName>
