@@ -15,6 +15,8 @@
  * @copyright CiviCRM LLC https://civicrm.org/licensing
  */
 
+use Civi\Api4\Utils\CoreUtil;
+
 /**
  * Business objects for managing custom data fields.
  */
@@ -95,6 +97,11 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
         'name' => 'Contact Reference',
         'label' => ts('Contact Reference'),
       ],
+      [
+        'id' => 'EntityReference',
+        'name' => 'Entity Reference',
+        'label' => ts('Entity Reference'),
+      ],
     ];
   }
 
@@ -118,6 +125,7 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
       'File' => CRM_Utils_Type::T_STRING,
       'Link' => CRM_Utils_Type::T_STRING,
       'ContactReference' => CRM_Utils_Type::T_INT,
+      'EntityReference' => CRM_Utils_Type::T_INT,
       'Country' => CRM_Utils_Type::T_INT,
     ];
   }
@@ -725,7 +733,9 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
       if (!$field->find(TRUE)) {
         throw new CRM_Core_Exception('Cannot find Custom Field ' . $fieldID);
       }
-
+      // FIXME: This whole function should switch to APIv4 get which handles
+      // unserialization automatically.
+      $field->settings = CRM_Core_DAO::unSerializeField($field->settings, CRM_Core_DAO::SERIALIZE_JSON);
       $fieldValues = [];
       CRM_Core_DAO::storeValues($field, $fieldValues);
 
@@ -982,6 +992,10 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField {
             FALSE, NULL, FALSE
           );
 
+        }
+        if ($field->data_type == 'EntityReference') {
+          $fieldAttributes['entity'] = $field->fk_entity;
+          $element = $qf->addAutocomplete($elementName, $label, $fieldAttributes, $useRequired && !$search);
         }
         else {
           // FIXME: This won't work with customFieldOptions hook
@@ -2690,7 +2704,7 @@ WHERE cf.id = %1 AND cg.is_multiple = 1";
     }
     // Do this before the "Select" string search because date fields have a "Select Date" html_type
     // and contactRef fields have an "Autocomplete-Select" html_type - contacts are an FK not an option list.
-    if (in_array($field['data_type'], ['ContactReference', 'Date'])) {
+    if (in_array($field['data_type'], ['EntityReference', 'ContactReference', 'Date'])) {
       return FALSE;
     }
     if (strpos($field['html_type'], 'Select') !== FALSE) {
@@ -2800,6 +2814,7 @@ WHERE cf.id = %1 AND cg.is_multiple = 1";
       'StateProvince' => 'civicrm_state_province',
       'ContactReference' => 'civicrm_contact',
       'File' => 'civicrm_file',
+      'EntityReference' => CoreUtil::getInfoItem((string) $field->fk_entity, 'table_name'),
     ];
     if (isset($fkFields[$field->data_type])) {
       // Serialized fields store value-separated strings which are incompatible with FK constraints
