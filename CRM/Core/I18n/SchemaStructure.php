@@ -41,6 +41,10 @@ class CRM_Core_I18n_SchemaStructure {
           'label_b_a' => "varchar(64) COMMENT 'Optional label for relationship of contact_b to contact_a.'",
           'description' => "varchar(255) COMMENT 'Optional verbose description of the relationship type.'",
         ],
+        'civicrm_saved_search' => [
+          'label' => "varchar(255) DEFAULT NULL COMMENT 'Administrative label for search'",
+          'description' => "text",
+        ],
         'civicrm_contact_type' => [
           'label' => "varchar(64) COMMENT 'localized Name of Contact Type.'",
           'description' => "text COMMENT 'localized Optional verbose description of the type.'",
@@ -285,6 +289,18 @@ class CRM_Core_I18n_SchemaStructure {
           ],
           'description' => [
             'type' => "Text",
+          ],
+        ],
+        'civicrm_saved_search' => [
+          'label' => [
+            'label' => "Label",
+            'type' => "Text",
+          ],
+          'description' => [
+            'label' => "Description",
+            'type' => "TextArea",
+            'rows' => "2",
+            'cols' => "60",
           ],
         ],
         'civicrm_contact_type' => [

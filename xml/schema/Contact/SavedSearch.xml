@@ -57,6 +57,7 @@
       <type>Text</type>
     </html>
     <add>5.32</add>
+    <localizable>true</localizable>
   </field>
 
   <field>
@@ -221,5 +222,6 @@
       <cols>60</cols>
     </html>
     <add>5.36</add>
+    <localizable>true</localizable>
   </field>
 </table>

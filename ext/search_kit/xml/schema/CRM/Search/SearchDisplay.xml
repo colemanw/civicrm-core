@@ -47,6 +47,7 @@
       <type>Text</type>
     </html>
     <add>1.0</add>
+    <localizable>true</localizable>
   </field>
 
   <field>
