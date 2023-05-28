@@ -26,6 +26,9 @@
         for (var p=0; p < placeholderCount; ++p) {
           this.placeholders.push({});
         }
+        if (this.initializeTaskManager) {
+          this.initializeTaskManager();
+        }
 
         // _.debounce used here to trigger the initial search immediately but prevent subsequent launches within 300ms
         this.getResultsPronto = _.debounce(ctrl.runSearch, 300, {leading: true, trailing: false});

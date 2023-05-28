@@ -2,11 +2,95 @@
   "use strict";
 
   // Trait shared by any search display controllers which use tasks
-  angular.module('crmSearchDisplay').factory('searchDisplayTasksTrait', function(crmApi4) {
+  angular.module('crmSearchTasks').factory('searchDisplayTasksTrait', function($rootScope, $window, crmApi4, dialogService) {
     var ts = CRM.ts('org.civicrm.search_kit');
+
+    // TaskManager object is responsible for fetching task metadata for a SearchDispaly
+    // and handles the running of tasks.
+    function TaskManager(displayCtrl) {
+      var mngr = this;
+      var fetchedMetadata;
+      this.tasks = null;
+      this.entityInfo = null;
+
+      this.getMetadata = function() {
+        if (fetchedMetadata) {
+          return;
+        }
+        fetchedMetadata = crmApi4({
+          entityInfo: ['Entity', 'get', {select: ['name', 'title', 'title_plural', 'primary_key'], where: [['name', '=', displayCtrl.apiEntity]]}, 0],
+          tasks: ['SearchDisplay', 'getSearchTasks', {entity: displayCtrl.apiEntity, savedSearch: displayCtrl.search, display: displayCtrl.display}]
+        }).then(function(result) {
+          mngr.entityInfo = result.entityInfo;
+          mngr.tasks = result.tasks;
+        });
+      };
+
+      this.getEntityName = function() {
+        return displayCtrl.apiEntity;
+      };
+      this.getApiParams = function() {
+        return displayCtrl.getApiParams();
+      };
+      this.getRowCount = function() {
+        return displayCtrl.rowCount;
+      };
+      this.isDisplayReady = function() {
+        return !displayCtrl.loading && displayCtrl.results && displayCtrl.results.length;
+      };
+
+      this.doTask = function(task, ids) {
+        var data = {
+          ids: ids,
+          entity: mngr.getEntityName(),
+          search: displayCtrl.search,
+          display: displayCtrl.display,
+          taskManager: mngr,
+          entityInfo: mngr.entityInfo,
+          taskTitle: task.title,
+          apiBatch: _.cloneDeep(task.apiBatch)
+        };
+        // If task uses a crmPopup form
+        if (task.crmPopup) {
+          var path = $rootScope.$eval(task.crmPopup.path, data),
+            query = task.crmPopup.query && $rootScope.$eval(task.crmPopup.query, data);
+          CRM.loadForm(CRM.url(path, query), {post: task.crmPopup.data && $rootScope.$eval(task.crmPopup.data, data)})
+            .on('crmFormSuccess', mngr.refreshAfterTask);
+        }
+        else if (task.redirect) {
+          var redirectPath = $rootScope.$eval(task.redirect.path, data),
+            redirectQuery = task.redirect.query && $rootScope.$eval(task.redirect.query, data) && $rootScope.$eval(task.redirect.data, data);
+          $window.open(CRM.url(redirectPath, redirectQuery), '_blank');
+        }
+        // If task uses dialogService
+        else {
+          var options = CRM.utils.adjustDialogDefaults({
+            autoOpen: false,
+            dialogClass: 'crm-search-task-dialog',
+            title: task.title
+          });
+          dialogService.open('crmSearchTask', (task.uiDialog && task.uiDialog.templateUrl) || '~/crmSearchTasks/crmSearchTaskApiBatch.html', data, options)
+            // Reload results on success, do nothing on cancel
+            .then(mngr.refreshAfterTask, _.noop);
+        }
+      };
+
+      this.refreshAfterTask = function() {
+        displayCtrl.selectedRows = [];
+        displayCtrl.allRowsSelected = false;
+        displayCtrl.rowCount = undefined;
+        displayCtrl.runSearch();
+      };
+    }
 
     // Trait properties get mixed into display controller using angular.extend()
     return {
+
+      initializeTaskManager: function() {
+        if (!this.taskManager) {
+          this.taskManager = new TaskManager(this);
+        }
+      },
 
       // Use ajax to select all rows on every page
       selectAllPages: function() {
@@ -103,13 +187,6 @@
       isPageSelected: function() {
         return (this.allRowsSelected && this.rowCount === this.results.length) ||
           (!this.allRowsSelected && this.selectedRows && this.selectedRows.length === this.results.length);
-      },
-
-      refreshAfterTask: function() {
-        this.selectedRows = [];
-        this.allRowsSelected = false;
-        this.rowCount = undefined;
-        this.runSearch();
       },
 
       // Add onChangeFilters callback (gets merged with others via angular.extend)
