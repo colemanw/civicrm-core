@@ -244,9 +244,9 @@ class CRM_Contact_BAO_ContactTest extends CiviUnitTestCase {
       'contact_sub_type' => $sub_contact_type,
     ];
     $contact = CRM_Contact_BAO_Contact::add($params);
-    $this->assertSame(
-      CRM_Core_DAO::serializeField((array_unique($sub_contact_type)), $contact->fields()['contact_sub_type']['serialize']),
-      $contact->contact_sub_type,
+    $this->assertEquals(
+      ['Staff', 'Parent'],
+      CRM_Contact_BAO_Contact::getDbVal('contact_sub_type', $contact->id),
       'Contact sub-type not deduplicated.'
     );
 
@@ -259,8 +259,8 @@ class CRM_Contact_BAO_ContactTest extends CiviUnitTestCase {
     ];
     $contact = CRM_Contact_BAO_Contact::add($params);
     $this->assertSame(
-      CRM_Core_DAO::serializeField($sub_contact_type, $contact->fields()['contact_sub_type']['serialize']),
-      $contact->contact_sub_type,
+      [$sub_contact_type],
+      CRM_Contact_BAO_Contact::getDbVal('contact_sub_type', $contact->id),
       'Wrong contact sub-type saved.'
     );
   }

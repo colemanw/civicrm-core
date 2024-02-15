@@ -599,16 +599,9 @@ class CRM_Core_DAO extends DB_DataObject {
     $fields = array_column((array) static::fields(), NULL, 'name');
 
     // Exclude fields yet not added by pending upgrades
-    $dbVer = \CRM_Core_BAO_Domain::version();
     $daoExt = static::getExtensionName();
-    if ($fields && $daoExt === 'civicrm' && version_compare($dbVer, \CRM_Utils_System::version()) < 0) {
-      $fields = array_filter($fields, function($field) use ($dbVer) {
-        $add = $field['add'] ?? '1.0.0';
-        if (substr_count($add, '.') < 2) {
-          $add .= '.alpha1';
-        }
-        return version_compare($dbVer, $add, '>=');
-      });
+    if ($daoExt === 'civicrm' && version_compare(CRM_Core_BAO_Domain::version(), CRM_Utils_System::version()) < 0) {
+      $fields = array_filter($fields, [static::class, 'isFieldSupported']);
     }
 
     // Exclude fields the user does not have permission for
@@ -619,6 +612,41 @@ class CRM_Core_DAO extends DB_DataObject {
     }
 
     return $fields;
+  }
+
+  /**
+   * Return a single field definition
+   *
+   * @param string $fieldName
+   * @return array|null
+   *   Array if field is found and usable
+   *   NULL if field does not exist or has not been added yet by pending upgrade
+   */
+  public static function getFieldInfo(string $fieldName): ?array {
+    $allFields = (array) static::fields();
+    // Darn `fields()` is keyed by unique_name, but array indexes are faster so try that first.
+    $fieldInfo = $allFields[$fieldName] ?? array_column($allFields, NULL, 'name')[$fieldName] ?? NULL;
+    if ($fieldInfo && static::getExtensionName() === 'civicrm' && static::isFieldSupported($fieldInfo)) {
+      return $fieldInfo;
+    }
+    return NULL;
+  }
+
+  /**
+   * Checks if a given field exists in the database yet.
+   * @param array $fieldInfo
+   * @return bool
+   */
+  private static function isFieldSupported(array $fieldInfo): bool {
+    if (empty($fieldInfo['add'])) {
+      // No idea when the field was added
+      return TRUE;
+    }
+    $add = $fieldInfo['add'];
+    if (substr_count($add, '.') < 2) {
+      $add .= '.alpha1';
+    }
+    return version_compare(CRM_Core_BAO_Domain::version(), $add, '>=');
   }
 
   /**
@@ -1499,7 +1527,7 @@ LIKE %1
 
     self::$_dbColumnValueCache ??= [];
 
-    while (strpos($daoName, '_BAO_') !== FALSE) {
+    while (str_contains($daoName, '_BAO_')) {
       $daoName = get_parent_class($daoName);
     }
 
@@ -1535,7 +1563,7 @@ LIKE %1
    * @throws CRM_Core_Exception
    */
   public static function getDbVal(string $returnColumn, $searchValue, string $searchColumn = 'id') {
-    $fieldSpec = static::getSupportedFields()[$returnColumn] ?? NULL;
+    $fieldSpec = static::getFieldInfo($returnColumn);
     $value = $fieldSpec ? self::getFieldValue(static::class, $searchValue, $returnColumn, $searchColumn) : NULL;
     return self::formatFieldValue($value, $fieldSpec);
   }
