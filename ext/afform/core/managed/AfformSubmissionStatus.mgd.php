@@ -89,4 +89,24 @@ return [
       'match' => ['option_group_id', 'name'],
     ],
   ],
+  [
+    'name' => 'AfformSubmissionStatus:Rejected',
+    'entity' => 'OptionValue',
+    'cleanup' => 'always',
+    'update' => 'always',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'afform_submission_status',
+        'name' => 'Rejected',
+        'value' => 4,
+        'label' => E::ts('Rejected'),
+        'description' => NULL,
+        'is_reserved' => TRUE,
+        'is_active' => TRUE,
+        'icon' => 'fa-pen-to-square',
+      ],
+      'match' => ['option_group_id', 'name'],
+    ],
+  ],
 ];

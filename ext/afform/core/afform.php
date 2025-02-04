@@ -737,4 +737,19 @@ function afform_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?i
     'icon' => 'fa-check-square-o',
     'uiDialog' => ['templateUrl' => '~/afSearchTasks/afformSubmissionProcessTask.html'],
   ];
+  $tasks['AfformSubmission']['reject'] = [
+    'title' => E::ts('Reject Submissions'),
+    'icon' => 'fa-rectangle-xmark',
+    'apiBatch' => [
+      'action' => 'update',
+      'params' => [
+        'where' => [['status_id:name', '=', 'Pending']],
+        'values' => ['status_id:name' => 'Rejected'],
+      ],
+      'confirmMsg' => E::ts('Reject %1 %2.'),
+      'runMsg' => E::ts('Updating %1 %2...'),
+      'successMsg' => E::ts('%1 %2 have been rejected.'),
+      'errorMsg' => E::ts('An error occurred while attempting to process %1 %2.'),
+    ],
+  ];
 }
