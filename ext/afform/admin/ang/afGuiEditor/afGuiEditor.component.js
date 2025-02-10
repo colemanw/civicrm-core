@@ -339,12 +339,19 @@
       };
 
       // Does afform placement include the contact summary?
-      this.isContactSummary = function() {
-        return editor.afform.placement.some((item) => item.startsWith('contact_summary_'));
+      this.isContactPlacement = function() {
+        let result = false;
+        editor.afform.placement.forEach(function(placement) {
+          const item = editor.meta.afform_placement.find(item => item.id === placement);
+          if (item && item.grouping === 'Contact') {
+            result = true;
+          }
+        });
+        return result;
       };
 
       this.onChangePlacement = function() {
-        if (!editor.isContactSummary()) {
+        if (!editor.isContactPlacement()) {
           _.each(editor.searchDisplays, function(searchDisplay) {
             delete searchDisplay.element.filters;
           });
