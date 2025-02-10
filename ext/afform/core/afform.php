@@ -341,6 +341,56 @@ function afform_civicrm_contactSummaryBlocks(&$blocks) {
 }
 
 /**
+ * Implements hook_civicrm_buildForm().
+ *
+ * Adds afforms to case summary screen.
+ */
+function afform_civicrm_buildForm($formName, &$form) {
+  if ($formName !== 'CRM_Case_Form_CaseView') {
+    return;
+  }
+  $afforms = Civi\Api4\Afform::get()
+    ->addSelect('name', 'title', 'module_name', 'directive_name', 'summary_contact_type')
+    ->addWhere('placement', 'CONTAINS', 'case_summary_block')
+    ->addOrderBy('summary_weight')
+    ->addOrderBy('title')
+    ->execute();
+  $cid = $form->get('cid');
+  $contact = NULL;
+  // entity_id = case.id
+  $afformOptions = [
+    'entity_id' => $form->get('id'),
+    'contact_id' => $cid,
+  ];
+  $weight = 1;
+  foreach ($afforms as $afform) {
+    // If Afform specifies a contact type, lookup the contact and compare
+    if (!empty($afform['summary_contact_type'])) {
+      // Contact.get only needs to happen once
+      $contact ??= civicrm_api4('Contact', 'get', [
+        'select' => ['contact_type', 'contact_sub_type'],
+        'where' => [['id', '=', $cid]],
+      ])->first();
+      $contactTypes = array_merge([$contact['contact_type']], $contact['contact_sub_type'] ?? []);
+      if (!array_intersect($afform['summary_contact_type'], $contactTypes)) {
+        continue;
+      }
+    }
+    $block = [
+      'module' => $afform['module_name'],
+      'directive' => $afform['directive_name'],
+    ];
+    $content = CRM_Core_Smarty::singleton()->fetchWith('afform/InlineAfform.tpl', ['afformOptions' => $afformOptions, 'afform' => $block]);
+    CRM_Core_Region::instance('case-view-custom-data-view')->add([
+      'markup' => $content,
+      'name' => 'afform:' . $afform['name'],
+      'weight' => $weight++,
+    ]);
+    Civi::service('angularjs.loader')->addModules($afform['module_name']);
+  }
+}
+
+/**
  * Resolve a mixed list of contact types and sub-types into just top-level contact types (Individual, Organization, Household)
  *
  * @param array $mixedTypes

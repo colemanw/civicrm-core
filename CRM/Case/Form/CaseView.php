@@ -111,6 +111,7 @@ class CRM_Case_Form_CaseView extends CRM_Core_Form {
     // If no cid supplied, use first case client
     if (!$cid) {
       $cid = array_keys($this->_caseClients)[0];
+      $this->set('cid', $cid);
     }
     elseif (!isset($this->_caseClients[$cid])) {
       CRM_Core_Error::statusBounce("Contact $cid not a client of case " . $this->_caseID);

@@ -350,6 +350,18 @@
         return result;
       };
 
+      // Does afform placement include any entity page?
+      this.isEntityPlacement = function() {
+        let result = false;
+        editor.afform.placement.forEach(function(placement) {
+          const item = editor.meta.afform_placement.find(item => item.id === placement);
+          if (item && item.grouping) {
+            result = true;
+          }
+        });
+        return result;
+      };
+
       this.onChangePlacement = function() {
         if (!editor.isContactPlacement()) {
           _.each(editor.searchDisplays, function(searchDisplay) {
