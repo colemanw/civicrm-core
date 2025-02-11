@@ -287,13 +287,16 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
       'icon' => $item['icon'],
     ];
     if ($item['extends'] === 'Contact') {
+      $entityIdFilter = 'contact_id';
       $afform['placement'] = ['contact_summary_tab'];
     }
     elseif (CoreUtil::isContact($item['extends'])) {
+      $entityIdFilter = 'contact_id';
       $afform['placement'] = ['contact_summary_tab'];
       $afform['summary_contact_type'] = [$item['extends']];
     }
     else {
+      $entityIdFilter = \CRM_Utils_String::convertStringToSnakeCase($item['extends']) . '_id';
       // tabs for other entities are placed without any
       // additional afform meta
       // @see civicrm_admin_ui_civicrm_tabset
@@ -308,6 +311,8 @@ class GetAfforms extends \Civi\Api4\Generic\BasicBatchAction {
           'saved_search' => 'Custom_' . $item['name'] . '_Search',
           'display_type' => 'table',
           'search_display' => 'Custom_' . $item['name'] . '_Tab',
+          // 'contact_id', 'event_id', etc.
+          'entity_id_filter' => $entityIdFilter,
         ]
       );
     }
