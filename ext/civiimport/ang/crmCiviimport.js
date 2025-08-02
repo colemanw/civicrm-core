@@ -202,17 +202,22 @@
          * Get a list of dedupe rules for the entity type.
          *
          * @param selectedEntity
-         * @returns {{}}
-         *   e.g {{name: 'IndividualSupervised', 'text' : 'Name and email', 'is_default' : true}}
+         * @returns [{}]
+         *   e.g [{name: 'IndividualSupervised', 'text' : 'Name and email', 'is_default' : true}]
          */
         $scope.getDedupeRules = function (selectedEntity) {
-          var dedupeRules = [];
+          const dedupeRules = [
+            {contact_type: null, text: ts('Universal'), icon: 'fa-star', children: []},
+          ];
           _.each($scope.data.dedupeRules, function (rule) {
-            if (selectedEntity === '') {
-              selectedEntity = null;
-            }
-            if (rule.contact_type === selectedEntity) {
-              dedupeRules.push({'id': rule.name, 'text': rule.title, 'is_default': rule.used === 'Unsupervised'});
+            if (!selectedEntity || !rule.contact_type || rule.contact_type === selectedEntity) {
+              let optGroup = dedupeRules.find(group => group.contact_type === rule.contact_type);
+              if (!optGroup) {
+                const contactType = $scope.data.contactTypes.find(type => type.id === rule.contact_type);
+                optGroup = {contact_type: rule.contact_type, text: contactType.text, icon: contactType.icon, children: []};
+                dedupeRules.push(optGroup);
+              }
+              optGroup.children.push({id: rule.name, text: rule.title, is_default: rule.used === 'Unsupervised'});
             }
           });
           return dedupeRules;
@@ -378,7 +383,7 @@
      */
     $scope.updateContactType = (function(entity) {
       entity.dedupe_rules = $scope.getDedupeRules(entity.selected.contact_type);
-      entity.selected.dedupe_rule = entity.dedupe_rules[0].id;
+      entity.selected.dedupe_rule = [];
     });
   });
 })(angular, CRM.$, CRM._);
