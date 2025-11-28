@@ -115,8 +115,11 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       throw new UnauthorizedException(E::ts('You do not have permission to submit this form'), ['show_detailed_error' => TRUE]);
     }
     if (empty($this->_afform['submit_currently_open'])) {
+      if (!empty($this->_afform['submit_limit_message'])) {
+        throw new UnauthorizedException($this->_afform['submit_limit_message'], ['show_detailed_error' => TRUE]);
+      }
       if (!empty($this->_afform['submit_limit_per_user']) && (($this->_afform['user_submission_count'] ?? 0) >= $this->_afform['submit_limit_per_user'])) {
-        throw new UnauthorizedException(E::ts('You have reached the maximum number of submissions for this form.'));
+        throw new UnauthorizedException(E::ts('You have reached the maximum number of submissions for this form.'), ['show_detailed_error' => TRUE]);
       }
       throw new UnauthorizedException(E::ts('This form is not currently open for submissions.'), ['show_detailed_error' => TRUE]);
     }
