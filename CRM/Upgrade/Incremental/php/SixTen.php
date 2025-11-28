@@ -28,10 +28,10 @@ class CRM_Upgrade_Incremental_php_SixTen extends CRM_Upgrade_Incremental_Base {
    *   The version number matching this function name
    */
   public function upgrade_6_10_alpha1($rev): void {
-    $this->addTask(ts('Upgrade DB to %1: SQL', [1 => $rev]), 'runSql', $rev);
-
     $this->addTask('Add Membership title and frontend_title columns', 'addMembershipTitleColumns');
     $this->addTask(ts('Create index %1', [1 => 'civicrm_membership_type.UI_name']), 'addIndex', 'civicrm_membership_type', [['name']], 'UI');
+
+    $this->addTask(ts('Upgrade DB to %1: SQL', [1 => $rev]), 'runSql', $rev);
 
     $this->addTask('Ensure custom fields all have a name', 'ensureCustomFieldsHaveName');
     $this->addTask('Set custom field name as required', 'alterSchemaField', 'CustomField', 'name', [

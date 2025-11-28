@@ -315,15 +315,14 @@ class CRM_Core_I18n_Schema {
       }
     }
 
-    // rebuild triggers
-    $last = array_pop($locales);
-
     foreach ($queries as $query) {
       $dao->query($query, FALSE);
     }
 
     // invoke the meta trigger creation call
-    CRM_Core_DAO::triggerRebuild();
+    if (!$isUpgradeMode) {
+      CRM_Core_DAO::triggerRebuild();
+    }
   }
 
   /**
