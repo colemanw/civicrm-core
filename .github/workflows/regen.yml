@@ -11,6 +11,7 @@
 # 7. If you didn't choose to commit, then to get to the download click on the green.
 # 7. Scroll down to Artifacts.
 # 8. There's your file available for download.
+# 10! It's supposed to be 10!
 name: Regen
 on:
   workflow_dispatch:
