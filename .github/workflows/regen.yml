@@ -75,7 +75,7 @@ jobs:
           tar xzf drupal.tgz
           mv drupal-$DRUPVER drupal
           cd drupal
-          composer require drush/drush:'^9'
+          composer require drush/drush:'^10'
           ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:passpasspw@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db' --site-name=TestCivi --account-pass=admin
           chmod +w sites/default
           cd sites/all/modules
