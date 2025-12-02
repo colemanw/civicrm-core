@@ -147,6 +147,17 @@ class CRM_Api4_Page_AJAX extends CRM_Core_Page {
         \Civi\API\Exception\UnauthorizedException::class => 403,
       ];
       $status = $statusMap[get_class($e)] ?? 500;
+
+      $errorId = CRM_Core_Error::createErrorId();
+      $logMessage = "AJAX Error ({$errorId}): {$e->getMessage()}";
+      $logContext = ['error_id' => $errorId, 'exception' => $e];
+      if ($status === 500) {
+        \Civi::log()->error($logMessage, $logContext);
+      }
+      else {
+        \Civi::log()->warning($logMessage, $logContext);
+      }
+
       // Send error code (but don't overwrite success code if there are multiple calls and one was successful)
       $this->httpResponseCode = $this->httpResponseCode ?: $status;
       if (CRM_Core_Permission::check('view debug output') || (method_exists($e, 'getErrorData') && ($e->getErrorData()['show_detailed_error'] ?? FALSE))) {
