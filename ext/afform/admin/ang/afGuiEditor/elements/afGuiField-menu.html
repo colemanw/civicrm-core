@@ -18,8 +18,22 @@
     <input id="{{:: $ctrl.node.name}}-maxlength" type="number" min="1" step="1" class="form-control" ng-model="getSet('input_attrs.maxlength')" ng-model-options="{getterSetter: true}">
   </form>
 </li>
-<li ng-if="$ctrl.fieldDefn.input_type === 'Number' && $ctrl.fieldDefn.data_type === 'Float'">
-  <div href ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown">
+<li ng-if="$ctrl.isMultiSelect() || $ctrl.fieldDefn.input_type === 'Number' || ($ctrl.fieldDefn.input_type === 'Range' && !hasOptions())">
+  <div ng-click="$event.stopPropagation()" class="form-inline">
+    <label>
+      {{:: ts('Minimum:') }}
+      <input type="number" class="form-control four" ng-model="$ctrl.node.defn.input_attrs.min" ng-change="$ctrl.onChangeMin()" >
+    </label>
+  </div>
+  <div ng-click="$event.stopPropagation()" class="form-inline">
+    <label>
+      {{:: ts('Maximum:') }}
+      <input type="number" class="form-control four" ng-model="$ctrl.node.defn.input_attrs.max" ng-change="$ctrl.onChangeMax()" >
+    </label>
+  </div>
+</li>
+<li ng-if="['Number', 'Range'].includes($ctrl.fieldDefn.input_type) && ['Float', 'Money'].includes($ctrl.fieldDefn.data_type) && !hasOptions()">
+  <div ng-click="$event.stopPropagation()" class="af-gui-field-select-in-dropdown">
     <label>{{:: ts('Decimal places:') }}</label>
     <select class="form-control" ng-model="getSet('input_attrs.step')" ng-model-options="{getterSetter: true}" title="{{:: ts('Decimal places') }}">
       <option ng-value="1">0</option>
