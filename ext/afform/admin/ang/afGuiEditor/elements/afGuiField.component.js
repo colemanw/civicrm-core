@@ -447,6 +447,22 @@
         $scope.editingOptions = val;
       };
 
+      // When changing min, keep it greater than or equal to max.
+      this.onChangeMin = () => {
+        const max = $scope.getProp('input_attrs.max');
+        if (typeof max !== 'undefined' && max < ctrl.node.defn.input_attrs.min) {
+          ctrl.node.defn.input_attrs.min = ctrl.node.defn.input_attrs.max;
+        }
+      };
+
+      // When changing max, keep it less than or equal to min.
+      this.onChangeMax = () => {
+        const min = $scope.getProp('input_attrs.min');
+        if (typeof min !== 'undefined' && min > ctrl.node.defn.input_attrs.max) {
+          ctrl.node.defn.input_attrs.max = ctrl.node.defn.input_attrs.min;
+        }
+      };
+
       // Returns a reference to a path n-levels deep within an object
       function drillDown(parent, path) {
         var container = parent;
