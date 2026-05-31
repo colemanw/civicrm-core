@@ -352,6 +352,9 @@ function afform_civicrm_permissionList(&$permissions) {
 function _afform_clear() {
   $container = \Civi::container();
   $container->get('afform_scanner')->clear();
+  if ($container->has('afform_template_scanner')) {
+    $container->get('afform_template_scanner')->clear();
+  }
   $container->get('angular')->clear();
 }
 

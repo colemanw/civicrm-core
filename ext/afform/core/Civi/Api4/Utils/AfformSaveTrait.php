@@ -120,7 +120,7 @@ trait AfformSaveTrait {
     $entityName = $this->getEntityName();
 
     if (empty($item['name'])) {
-      $prefix = 'af' . ($item['type'] ?? '');
+      $prefix = $entityName === 'Afform' ? 'af' . ($item['type'] ?? '') : 'afTemplate';
       $item['name'] = _afform_angular_module_name($prefix . '-' . \CRM_Utils_String::munge($item['title'], '-'));
       $suffix = '';
       while (

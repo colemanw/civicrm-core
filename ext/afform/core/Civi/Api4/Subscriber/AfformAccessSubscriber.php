@@ -30,6 +30,7 @@ class AfformAccessSubscriber extends AutoService implements EventSubscriberInter
   public static function getSubscribedEvents(): array {
     return [
       'civi.api4.authorizeRecord::Afform' => ['onApiAuthorizeRecord', 500],
+      'civi.api4.authorizeRecord::AfformTemplate' => ['onApiAuthorizeRecord', 500],
     ];
   }
 
@@ -40,21 +41,22 @@ class AfformAccessSubscriber extends AutoService implements EventSubscriberInter
   public function onApiAuthorizeRecord(AuthorizeRecordEvent $event) {
     $apiRequest = $event->getApiRequest();
     $action = $apiRequest->getActionName();
+    $entityName = $apiRequest->getEntityName();
 
     if (!in_array($action, ['revert', 'delete', 'update'], TRUE)) {
       // We only care about these actions.
       return;
     }
 
-    /** @var \CRM_Afform_AfformScanner $scanner */
-    $scanner = \Civi::service('afform_scanner');
+    /** @var \CRM_Afform_BaseScanner $scanner */
+    $scanner = \Civi::service($entityName === 'AfformTemplate' ? 'afform_template_scanner' : 'afform_scanner');
     $afform = $event->getRecord();
 
     // Get user as we need to check for Test user
     $user_id = \CRM_Core_Session::getLoggedInContactID();
     if ('update' === $action) {
       $orig = [];
-      $this->checkNameForAfform($afform, $orig, $scanner);
+      $this->checkNameForAfform($afform, $orig, $scanner, $entityName, $action);
       // Check if updating or creating
       if ($orig) {
         // We have an existing afform, so we need to check `manage own afform` permissions
