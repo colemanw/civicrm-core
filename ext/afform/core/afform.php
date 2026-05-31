@@ -6,27 +6,6 @@ use Civi\Afform\StringVisitor;
 use CRM_Afform_ExtensionUtil as E;
 
 /**
- * Filter the content of $params to only have supported afform fields.
- *
- * @param array $params
- * @return array
- */
-function _afform_fields_filter($params) {
-  $result = [];
-  $fields = \Civi\Api4\Afform::getfields(FALSE)->setAction('create')->execute()->indexBy('name');
-  foreach ($fields as $fieldName => $field) {
-    if (array_key_exists($fieldName, $params)) {
-      $result[$fieldName] = $params[$fieldName];
-
-      if ($field['data_type'] === 'Boolean' && !is_bool($params[$fieldName])) {
-        $result[$fieldName] = CRM_Utils_String::strtobool($params[$fieldName]);
-      }
-    }
-  }
-  return $result;
-}
-
-/**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config

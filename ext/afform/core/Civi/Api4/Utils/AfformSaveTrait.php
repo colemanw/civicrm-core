@@ -19,8 +19,9 @@ trait AfformSaveTrait {
    *
    */
   protected function writeRecord($item) {
-    /** @var \CRM_Afform_AfformScanner $scanner */
-    $scanner = \Civi::service('afform_scanner');
+    $entityName = $this->getEntityName();
+    /** @var \CRM_Afform_BaseScanner $scanner */
+    $scanner = \Civi::service($entityName === 'AfformTemplate' ? 'afform_template_scanner' : 'afform_scanner');
 
     // If no name given, create a unique name based on the title
     $orig = [];
@@ -32,23 +33,21 @@ trait AfformSaveTrait {
     }
 
     // Dispatch hook_civicrm_pre
-    \CRM_Utils_Hook::pre($orig ? 'edit' : 'create', 'Afform', NULL, $item);
+    \CRM_Utils_Hook::pre($orig ? 'edit' : 'create', $entityName, NULL, $item);
 
-    // FIXME validate all field data.
-    $item = _afform_fields_filter($item);
+    $item = $this->filterFields($item, $entityName);
 
-    // Create or update aff.html.
+    // Create or update layout HTML.
     if (isset($item['layout'])) {
-      $layoutPath = $scanner->createSiteLocalPath($item['name'], 'aff.html');
+      $layoutPath = $scanner->createSiteLocalPath($item['name'], $scanner->getLayoutFileExtension());
       \CRM_Utils_File::createDir(dirname($layoutPath));
       $html = $this->convertInputToHtml($item['layout']);
 
       // Are we multilingual.
-      if (\CRM_Core_I18n::isMultiLingual()) {
-        self::saveTranslations($item, $html);
+      if ($entityName === 'Afform' && \CRM_Core_I18n::isMultiLingual()) {
+        self::saveTranslations($item, $html, $entityName);
       }
       file_put_contents($layoutPath, $html);
-      // FIXME check for writability then success. Report errors.
     }
 
     $meta = $item + (array) $orig;
@@ -57,11 +56,10 @@ trait AfformSaveTrait {
       $meta['permission'] = explode(',', $meta['permission']);
     }
     if (!empty($meta)) {
-      $metaPath = $scanner->createSiteLocalPath($item['name'], \CRM_Afform_AfformScanner::METADATA_JSON);
+      $metaPath = $scanner->createSiteLocalPath($item['name'], $scanner->getMetadataJsonExtension());
       \CRM_Utils_File::createDir(dirname($metaPath));
       // Add eof newline to make files git-friendly.
       file_put_contents($metaPath, json_encode($meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
-      // FIXME check for writability then success. Report errors.
     }
 
     // We may have changed list of files covered by the cache.
@@ -82,30 +80,52 @@ trait AfformSaveTrait {
     $result = $meta + $item;
 
     // Dispatch hook_civicrm_post
-    // param $object is passed by reference
     $nullValue = NULL;
-    \CRM_Utils_Hook::post($orig ? 'edit' : 'create', 'Afform', NULL, $nullValue, $result);
+    \CRM_Utils_Hook::post($orig ? 'edit' : 'create', $entityName, NULL, $nullValue, $result);
 
     return $result;
   }
 
   /**
-   * @param array $item The afform item being processed.
-   * @param array $orig The existing afform if already created.
-   * @param \CRM_Afform_AfformScanner $scanner
+   * Filter the content of $params to only have supported fields.
+   *
+   * @param array $params
+   * @param string $entityName
+   * @return array
+   */
+  protected function filterFields($params, $entityName) {
+    $result = [];
+    $fields = \civicrm_api4($entityName, 'getFields', ['checkPermissions' => FALSE, 'action' => 'create'])->indexBy('name');
+    foreach ($fields as $fieldName => $field) {
+      if (array_key_exists($fieldName, $params)) {
+        $result[$fieldName] = $params[$fieldName];
+
+        if (($field['data_type'] ?? NULL) === 'Boolean' && !is_bool($params[$fieldName])) {
+          $result[$fieldName] = \CRM_Utils_String::strtobool($params[$fieldName]);
+        }
+      }
+    }
+    return $result;
+  }
+
+  /**
+   * @param array $item The item being processed.
+   * @param array $orig The existing record if already created.
+   * @param \CRM_Afform_BaseScanner $scanner
    *
    * @return void
    * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function checkNameForAfform(&$item, &$orig, $scanner) {
+    $entityName = $this->getEntityName();
+
     if (empty($item['name'])) {
       $prefix = 'af' . ($item['type'] ?? '');
       $item['name'] = _afform_angular_module_name($prefix . '-' . \CRM_Utils_String::munge($item['title'], '-'));
       $suffix = '';
       while (
-        file_exists($scanner->createSiteLocalPath($item['name'] . $suffix, \CRM_Afform_AfformScanner::METADATA_JSON))
-        || file_exists($scanner->createSiteLocalPath($item['name'] . $suffix, \CRM_Afform_AfformScanner::LAYOUT_FILE))
+        file_exists($scanner->createSiteLocalPath($item['name'] . $suffix, $scanner->getMetadataJsonExtension()))
+        || file_exists($scanner->createSiteLocalPath($item['name'] . $suffix, $scanner->getLayoutFileExtension()))
       ) {
         $suffix++;
       }
@@ -113,34 +133,42 @@ trait AfformSaveTrait {
       $orig = NULL;
     }
     elseif (!preg_match('/^[a-zA-Z][-_a-zA-Z0-9]*$/', $item['name'])) {
-      throw new \CRM_Core_Exception("Afform.{$this->getActionName()}: name should begin with a letter and only contain alphanumerics underscores and dashes.");
+      $actionName = $this->getActionName();
+      throw new \CRM_Core_Exception("$entityName.$actionName: name should begin with a letter and only contain alphanumerics underscores and dashes.");
     }
     else {
       // Fetch existing metadata
-      $fields = \Civi\Api4\Afform::getfields()->setCheckPermissions(FALSE)->setAction('create')->addSelect('name')->execute()->column('name');
+      $fields = \civicrm_api4($entityName, 'getFields', ['checkPermissions' => FALSE, 'action' => 'create'])->column('name');
       unset($fields[array_search('layout', $fields)]);
-      $orig = \Civi\Api4\Afform::get()->setCheckPermissions(FALSE)->addWhere('name', '=', $item['name'])->setSelect($fields)->execute()->first();
+      $orig = \civicrm_api4($entityName, 'get', [
+        'checkPermissions' => FALSE,
+        'where' => [['name', '=', $item['name']]],
+        'select' => $fields,
+      ])->first();
     }
   }
 
   /**
-   * Save Translation Strings from Form to database
-   * array $form
-   * string $html
+   * Save Translation Strings from Form/Template to database
+   *
+   * @param array $form
+   * @param string $html
+   * @param string $entityName
    */
-  protected static function saveTranslations($form, $html) {
+  protected static function saveTranslations($form, $html, $entityName = 'Afform') {
     $strings = StringVisitor::extractStrings($form, $html);
 
-    // Save the form strings.
+    // Save the strings.
     if (!empty($strings)) {
-      // Create context hash (for now we just record the entity)
-      $context_key = \CRM_Core_BAO_TranslationSource::createGuid(':::afform');
+      $entity = strtolower($entityName);
+      // Create context hash
+      $context_key = \CRM_Core_BAO_TranslationSource::createGuid(':::' . $entity);
 
       // Build the array for the table.
       $records = [];
       foreach ($strings as $value) {
         $source_key = \CRM_Core_BAO_TranslationSource::createGuid($value);
-        $records[] = ['source' => $value, 'source_key' => $source_key, 'context_key' => $context_key, 'entity' => 'afform'];
+        $records[] = ['source' => $value, 'source_key' => $source_key, 'context_key' => $context_key, 'entity' => $entity];
       }
       TranslationSource::save(FALSE)
         ->setRecords($records)
