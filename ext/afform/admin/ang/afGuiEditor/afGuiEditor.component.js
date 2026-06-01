@@ -59,6 +59,8 @@
         afGui.addMeta(this.data);
         initializeForm();
 
+        this.canSaveTemplate = CRM.checkPerm('manage own afform template');
+
         $timeout(fixEditorHeight);
         $timeout(editor.adjustTabWidths);
         $(window)
@@ -744,6 +746,26 @@
               refreshMenubar();
             }
             setLastSaved();
+          })
+          .catch((error) => {
+            const message = error?.error_message ? error.error_message : ts('Unknown error');
+            CRM.alert(message, ts('Save failed'), 'error');
+            $scope.saving = false;
+          });
+      };
+
+      $scope.saveAsTemplate = function() {
+        // save and close any open rich text elements
+        $element[0].querySelectorAll('civi-rich-text-input[editing]').forEach((el) => el.saveAndCloseEditor());
+
+        const template = JSON.parse(angular.toJson(editor.afform));
+        delete template.name; // Let the API auto-generate a unique aftName
+
+        $scope.saving = true;
+        crmApi4('AfformTemplate', 'save', {formatWhitespace: true, records: [template]})
+          .then((data) => {
+            $scope.saving = false;
+            CRM.alert(ts('Template "%1" has been saved successfully.', {1: data[0].title}), ts('Saved as Template'), 'success');
           })
           .catch((error) => {
             const message = error?.error_message ? error.error_message : ts('Unknown error');
