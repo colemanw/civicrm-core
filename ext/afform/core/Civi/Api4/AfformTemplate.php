@@ -228,7 +228,7 @@ class AfformTemplate extends Generic\AbstractEntity {
   public static function permissions() {
     return [
       'meta' => ['access CiviCRM'],
-      'default' => ['manage own afform'],
+      'default' => ['manage own afform template'],
       'get' => [],
       'getOptions' => [],
     ];

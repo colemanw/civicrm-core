@@ -275,13 +275,18 @@ function afform_civicrm_alterMenu(&$items) {
  */
 function afform_civicrm_permission(&$permissions) {
   $permissions['administer afform'] = [
-    'label' => E::ts('FormBuilder: edit and delete forms'),
-    'description' => E::ts('Allows non-admin users to create, update and delete forms'),
+    'label' => E::ts('FormBuilder: create edit and delete all forms and templates'),
+    'description' => E::ts('Allows users to create, update and delete forms and templates.'),
     'implied_by' => ['administer CiviCRM'],
   ];
   $permissions['manage own afform'] = [
-    'label' => E::ts('FormBuilder: edit and delete own forms'),
-    'description' => E::ts('Gives non-admin users the permission to manage their own forms.'),
+    'label' => E::ts('FormBuilder: create edit and delete own forms'),
+    'description' => E::ts('Allows users to create and manage their own forms.'),
+    'implied_by' => ['administer afform'],
+  ];
+  $permissions['manage own afform template'] = [
+    'label' => E::ts('FormBuilder: create edit and delete own templates'),
+    'description' => E::ts('Allows users to create and manage their own form templates.'),
     'implied_by' => ['administer afform'],
   ];
 }

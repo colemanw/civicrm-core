@@ -74,7 +74,7 @@ class AfformAccessSubscriber extends AutoService implements EventSubscriberInter
   }
 
   /**
-   * Checks for access based on permissions and created_id if exists.
+   * Checks for access to edit afforms and templates.
    *
    * @param array|\Civi\Api4\Generic\AbstractAction $apiRequest The current request.
    * @param array $afform The current afform entity for the request.
@@ -83,8 +83,13 @@ class AfformAccessSubscriber extends AutoService implements EventSubscriberInter
    * @return bool
    */
   protected function checkAccess($apiRequest, $afform, $user_id) {
-    // Check permissions to Revert
-    if ($apiRequest->getCheckPermissions() && !\CRM_Core_Permission::check('administer afform') && \CRM_Core_Permission::check('manage own afform') && (empty($afform['created_id']) || $afform['created_id'] !== $user_id)) {
+    $manageOwnPermission = $apiRequest->getEntityName() === 'Afform' ? 'manage own afform' : 'manage own afform template';
+    // User must either have 'administer afform' permission or be the creator with 'manage own' permission.
+    if ($apiRequest->getCheckPermissions() &&
+      !\CRM_Core_Permission::check('administer afform', $user_id) &&
+      \CRM_Core_Permission::check($manageOwnPermission, $user_id) &&
+      (empty($afform['created_id']) || $afform['created_id'] !== $user_id)
+    ) {
       return FALSE;
     }
     return TRUE;
