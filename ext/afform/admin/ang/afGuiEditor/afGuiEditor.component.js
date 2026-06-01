@@ -15,7 +15,8 @@
     bindings: {
       data: '<',
       entity: '<',
-      mode: '@'
+      mode: '@',
+      entityType: '<'
     },
     controllerAs: 'editor',
     controller: function($scope, $element, crmApi4, crmUiHelp, afGui, $parse, $timeout, $location, $route, $rootScope, formatForSelect2) {
@@ -54,6 +55,7 @@
       this.debounceWithGetterSetter = _.assign({getterSetter: true}, this.debounceMode);
 
       this.$onInit = function() {
+        this.entityType = this.entityType || 'Afform';
         // Load the current form plus blocks & fields
         afGui.resetMeta();
         afGui.addMeta(this.data);
@@ -293,7 +295,7 @@
           addToCanvas();
         } else {
           $timeout(editor.adjustTabWidths);
-          crmApi4('Afform', 'loadAdminData', {
+          crmApi4(editor.entityType, 'loadAdminData', {
             definition: {type: 'form'},
             entity: type
           }, 0).then((data) => {
@@ -639,7 +641,7 @@
           addToCanvas();
         } else {
           $timeout(editor.adjustTabWidths);
-          crmApi4('Afform', 'loadAdminData', {
+          crmApi4(editor.entityType, 'loadAdminData', {
             definition: {type: 'search'},
             entity: display.key
           }, 0).then((data) => {
@@ -724,7 +726,7 @@
           afform.create_submission = true;
         }
         $scope.saving = true;
-        crmApi4('Afform', 'save', {formatWhitespace: true, records: [afform]})
+        crmApi4(editor.entityType, 'save', {formatWhitespace: true, records: [afform]})
           .then((data) => {
             $scope.saving = false;
             // When saving a new form for the first time
@@ -732,7 +734,7 @@
               undoAction = 'save';
               editor.afform.name = data[0].name;
               // Update path to editing url
-              changePathQuietly('/edit/' + data[0].name);
+              changePathQuietly('/edit/' + editor.entityType + '/' + data[0].name);
             }
             // Update undo history - mark current snapshot as "saved"
             undoHistory.forEach((snapshot, index) => {

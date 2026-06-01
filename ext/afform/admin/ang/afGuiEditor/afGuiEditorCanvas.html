@@ -24,11 +24,11 @@
           <span ng-if="!editor.isSaved() && !saving">{{:: ts('Save') }}</span>
           <span ng-if="saving">{{:: ts('Saving...') }}</span>
         </button>
-        <button type="button" class="btn dropdown-toggle" ng-show="editor.canSaveTemplate" ng-class="{'btn-primary': !editor.isSaved() && !saving, 'btn-warning': saving, 'btn-success': editor.isSaved()}" data-toggle="dropdown" ng-disabled="!editor.afform.title || saving">
+        <button type="button" class="btn dropdown-toggle" ng-show="editor.canSaveTemplate && editor.entityType === 'Afform'" ng-class="{'btn-primary': !editor.isSaved() && !saving, 'btn-warning': saving, 'btn-success': editor.isSaved()}" data-toggle="dropdown" ng-disabled="!editor.afform.title || saving">
           <span class="caret"></span>
           <span class="sr-only">{{:: ts('Toggle Dropdown') }}</span>
         </button>
-        <ul class="dropdown-menu dropdown-menu-right" ng-if="editor.canSaveTemplate">
+        <ul class="dropdown-menu dropdown-menu-right" ng-if="editor.canSaveTemplate && editor.entityType === 'Afform'">
           <li>
             <a href ng-click="saveAsTemplate()">
               <i class="crm-i fa-file-code-o" role="img" aria-hidden="true"></i>

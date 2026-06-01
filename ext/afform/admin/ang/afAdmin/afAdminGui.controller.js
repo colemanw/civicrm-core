@@ -4,6 +4,7 @@
   angular.module('afAdmin').controller('afAdminGui', function($scope, $route, data) {
     $scope.$ctrl = this;
     this.entity = $route.current.params.entity;
+    this.entityType = $route.current.params.entityType || 'Afform';
     // Pass through result from api Afform.loadAdminData
     this.data = data;
   });

@@ -85,7 +85,10 @@
     </thead>
     <tbody>
     <tr ng-repeat="afform in $ctrl.afforms[$ctrl.tab] | filter:$ctrl.searchAfformList | orderBy:$ctrl.sortField:$ctrl.sortDir">
-      <td>{{:: afform.title }}</td>
+      <td>
+        {{:: afform.title }}
+        <span ng-if="afform.is_template" class="label label-info">{{:: ts('Template') }}</span>
+      </td>
       <td>
         <code>{{:: afform.name }}</code>
       </td>
@@ -119,8 +122,8 @@
         {{:: afform.tags.join(', ') }}
       </td>
       <td class="text-right">
-        <a ng-if="afform.type !== 'system' && afform.can_manage" ng-href="#/edit/{{:: afform.name }}" class="btn btn-xs btn-primary">{{:: ts('Edit') }}</a>
-        <a ng-if="afform.type !== 'system'" ng-href="#/clone/{{:: afform.name }}" class="btn btn-xs btn-secondary">{{:: ts('Clone') }}</a>
+        <a ng-if="afform.type !== 'system' && afform.can_manage" ng-href="#/edit/{{:: afform.entityType }}/{{:: afform.name }}" class="btn btn-xs btn-primary">{{:: ts('Edit') }}</a>
+        <a ng-if="afform.type !== 'system'" ng-href="#/clone/{{:: afform.entityType }}/{{:: afform.name }}" class="btn btn-xs btn-secondary">{{:: ts('Clone') }}</a>
         <a href ng-if="afform.has_local && afform.can_manage" class="btn btn-xs btn-{{ afform.has_base ? 'warning' : 'danger' }}" crm-confirm="{type: afform.has_base ? 'revert' : 'delete', obj: afform}" on-yes="$ctrl.revert(afform)">
           {{ afform.has_base ? ts('Revert') : ts('Delete') }}
         </a>

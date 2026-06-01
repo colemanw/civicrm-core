@@ -29,12 +29,16 @@
       if (afform.submission_date) {
         afform.submission_date = CRM.utils.formatDate(afform.submission_date);
       }
-      afform.can_manage = CRM.checkPerm('administer afform');
-      // Check for ownership and correct permission
-      if (!afform.can_manage && afform.created_id) {
-        // Permission, manage own afform, is to only manage afform's the user created
-        if (CRM.checkPerm('manage own afform') && (CRM.config.cid === afform.created_id)) {
-          afform.can_manage = true;
+      if (afform.entityType === 'AfformTemplate') {
+        afform.can_manage = CRM.checkPerm('administer afform') || (CRM.checkPerm('manage own afform template') && afform.created_id && (CRM.config.cid === afform.created_id));
+      } else {
+        afform.can_manage = CRM.checkPerm('administer afform');
+        // Check for ownership and correct permission
+        if (!afform.can_manage && afform.created_id) {
+          // Permission, manage own afform, is to only manage afform's the user created
+          if (CRM.checkPerm('manage own afform') && (CRM.config.cid === afform.created_id)) {
+            afform.can_manage = true;
+          }
         }
       }
       afforms[afform.type] = afforms[afform.type] || [];
@@ -116,11 +120,14 @@
     this.revert = (afform) => {
       const index = ctrl.afforms[ctrl.tab].findIndex(item => item.name === afform.name);
       if (index > -1) {
-        const apiOps = [['Afform', 'revert', {where: [['name', '=', afform.name]]}]];
+        const apiOps = [[afform.entityType, 'revert', {where: [['name', '=', afform.name]]}]];
         if (afform.has_base) {
-          apiOps.push(['Afform', 'get', {
+          const selectFields = afform.entityType === 'AfformTemplate' ?
+            ['name', 'title', 'type', 'has_local', 'has_base', 'base_module', 'base_module:label', 'tags:label', 'created_id'] :
+            ['name', 'title', 'type', 'is_public', 'server_route', 'has_local', 'has_base', 'base_module', 'base_module:label', 'tags:label', 'created_id'];
+          apiOps.push([afform.entityType, 'get', {
             where: [['name', '=', afform.name]],
-            select: ['name', 'title', 'type', 'is_public', 'server_route', 'has_local', 'has_base', 'base_module', 'base_module:label']
+            select: selectFields
           }, 0]);
         }
         const apiCall = crmStatus(
@@ -134,7 +141,30 @@
         if (afform.has_base) {
           afform.has_local = false;
           apiCall.then((result) => {
-            ctrl.afforms[ctrl.tab][index] = result[1];
+            const updated = result[1];
+            updated.entityType = afform.entityType;
+            updated.type = updated.type || 'system';
+            updated.placement = updated['placement:label'];
+            updated.tags = updated['tags:label'];
+            if (updated.entityType === 'AfformTemplate') {
+              updated.is_template = true;
+              updated.server_route = '';
+            }
+            updated.can_manage = CRM.checkPerm('administer afform');
+            if (updated.entityType === 'AfformTemplate') {
+              if (!updated.can_manage && updated.created_id) {
+                if (CRM.checkPerm('manage own afform template') && (CRM.config.cid === updated.created_id)) {
+                  updated.can_manage = true;
+                }
+              }
+            } else {
+              if (!updated.can_manage && updated.created_id) {
+                if (CRM.checkPerm('manage own afform') && (CRM.config.cid === updated.created_id)) {
+                  updated.can_manage = true;
+                }
+              }
+            }
+            ctrl.afforms[ctrl.tab][index] = updated;
           });
         } else {
           apiCall.then(() => {

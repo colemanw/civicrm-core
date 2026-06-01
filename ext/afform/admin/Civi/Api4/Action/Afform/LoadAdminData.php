@@ -16,6 +16,12 @@ use Civi\Api4\Utils\CoreUtil;
 class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
 
   /**
+   * The APIv4 entity name (Afform or AfformTemplate)
+   * @var string
+   */
+  protected $entityType = 'Afform';
+
+  /**
    * Any properties already known about the afform
    * @var array
    * @required
@@ -262,12 +268,13 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
    * @return array|null
    */
   private function loadForm($name) {
-    return Afform::get($this->checkPermissions)
-      ->addSelect('*', 'directive_name')
-      ->setFormatWhitespace(TRUE)
-      ->setLayoutFormat('shallow')
-      ->addWhere('name', '=', $name)
-      ->execute()->first();
+    return \civicrm_api4($this->entityType, 'get', [
+      'checkPermissions' => $this->checkPermissions,
+      'select' => ['*', 'directive_name'],
+      'formatWhitespace' => TRUE,
+      'layoutFormat' => 'shallow',
+      'where' => [['name', '=', $name]],
+    ])->first();
   }
 
   /**
@@ -340,6 +347,22 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
    */
   public function setDefinition(array $definition) {
     $this->definition = $definition;
+    return $this;
+  }
+
+  /**
+   * @return string
+   */
+  public function getEntityType(): string {
+    return $this->entityType;
+  }
+
+  /**
+   * @param string $entityType
+   * @return $this
+   */
+  public function setEntityType(string $entityType) {
+    $this->entityType = $entityType;
     return $this;
   }
 
