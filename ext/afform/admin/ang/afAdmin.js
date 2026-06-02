@@ -34,6 +34,18 @@
           }
         }
       });
+      $routeProvider.when('/create/template/:templateName', {
+        controller: 'afAdminGui',
+        template: '<af-gui-editor mode="create" data="$ctrl.data" entity-type="$ctrl.entityType"></af-gui-editor>',
+        resolve: {
+          // Load data for gui editor
+          data: function($route, crmApi4) {
+            return crmApi4('Afform', 'loadAdminData', {
+              definition: {template: $route.current.params.templateName}
+            }, 0);
+          }
+        }
+      });
       $routeProvider.when('/edit/:entityType/:name', {
         controller: 'afAdminGui',
         template: '<af-gui-editor mode="edit" data="$ctrl.data" entity-type="$ctrl.entityType"></af-gui-editor>',

@@ -13,7 +13,7 @@ class AfformTemplateTest extends \PHPUnit\Framework\TestCase implements Headless
   private $templateName = 'test_template_123';
 
   public function setUpHeadless() {
-    return \Civi\Test::headless()->installMe(__DIR__)->install('org.civicrm.search_kit')->apply();
+    return \Civi\Test::headless()->installMe(__DIR__)->install('org.civicrm.search_kit')->install('org.civicrm.afform_admin')->apply();
   }
 
   public function tearDown(): void {
@@ -65,6 +65,28 @@ class AfformTemplateTest extends \PHPUnit\Framework\TestCase implements Headless
       ->execute();
 
     $this->assertCount(0, $resultDeleted);
+  }
+
+  public function testLoadFromTemplate() {
+    // 1. Create a template
+    AfformTemplate::create(FALSE)
+      ->addValue('name', $this->templateName)
+      ->addValue('title', 'My Test Template')
+      ->addValue('type', 'form')
+      ->addValue('layout', [['#tag' => 'af-form', 'ctrl' => 'afform', '#children' => []]])
+      ->execute();
+
+    // 2. Load admin data from the template for creating a new Afform
+    $adminData = \civicrm_api4('Afform', 'loadAdminData', [
+      'definition' => ['template' => $this->templateName],
+    ])->first();
+
+    $this->assertNotEmpty($adminData);
+    $this->assertEquals('My Test Template', $adminData['definition']['title']);
+    $this->assertEquals('form', $adminData['definition']['type']);
+    // Name must be stripped
+    $this->assertArrayNotHasKey('name', $adminData['definition']);
+    $this->assertEquals([['#tag' => 'af-form', 'ctrl' => 'afform']], $adminData['definition']['layout']);
   }
 
 }

@@ -52,6 +52,19 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
         \CRM_Core_I18n::singleton()->setLocale($locale);
       }
     }
+    elseif (!empty($this->definition['template'])) {
+      // Load template definition
+      $template = \civicrm_api4('AfformTemplate', 'get', [
+        'checkPermissions' => $this->checkPermissions,
+        'select' => ['*'],
+        'where' => [['name', '=', $this->definition['template']]],
+      ])->first();
+      if ($template) {
+        $info['definition'] = $template;
+        // Strip the template name so saving it will generate a new Afform name
+        unset($info['definition']['name']);
+      }
+    }
     else {
       // Create new blank afform
       switch ($this->definition['type']) {
@@ -153,7 +166,7 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
     };
 
     if ($info['definition']['type'] === 'form') {
-      if ($newForm) {
+      if ($newForm && empty($this->definition['template'])) {
         $entities[] = $this->entity;
         $defaultEntity = AfformAdminMeta::getMetadata()['entities'][$this->entity] ?? [];
         if (!empty($defaultEntity['boilerplate'])) {
@@ -179,7 +192,7 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
 
     if ($info['definition']['type'] === 'search') {
       $getFieldsMode = 'get';
-      if ($newForm) {
+      if ($newForm && empty($this->definition['template'])) {
         [$searchName, $displayName] = array_pad(explode('.', $this->entity ?? ''), 2, '');
         $displayTags = [
           ['search-name' => $searchName, 'display-name' => $displayName],
@@ -207,7 +220,7 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
         }
         $display['calc_fields'] = \Civi\Search\Meta::getCalcFields($display['saved_search_id.api_entity'], $display['saved_search_id.api_params']);
         $display['filters'] = empty($displayTag['filters']) ? NULL : (\CRM_Utils_JS::getRawProps($displayTag['filters']) ?: NULL);
-        if ($newForm) {
+        if ($newForm && empty($this->definition['template'])) {
           $info['definition']['layout'][0]['#children'][] = $displayTag + ['#tag' => $display['type:name']];
         }
         $entities[] = $display['saved_search_id.api_entity'];
@@ -237,7 +250,7 @@ class LoadAdminData extends \Civi\Api4\Generic\AbstractAction {
         }
         $info['search_displays'][] = $display;
       }
-      if (!$newForm) {
+      if (!$newForm || !empty($this->definition['template'])) {
         $scanBlocks($info['definition']['layout']);
       }
       $entities = array_unique($entities);
