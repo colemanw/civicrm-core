@@ -1,0 +1,23 @@
+<fieldset ng-repeat="set in $ctrl.savedSearch.api_params.sets" class="crm-search-set">
+  <legend class="sr-only">{{:: $index === 0 ? ts('Search for') : ts('Union %1', {1: $index})}}</legend>
+  <div class="form-inline">
+    <select ng-if="$index > 0" class="form-control crm-auto-width" ng-model="set[0]" ng-options="k as v for (k, v) in $ctrl.setOperations" title="{{:: ts('Set Operation')}}"></select>
+    <label ng-if="$index === 0" for="crm-search-entity-set-0">{{:: ts('Search for') }}</label>
+    <input id="crm-search-entity-set-{{$index}}" class="form-control twenty collapsible-optgroups" ng-model="set[1]" crm-ui-select="::{allowClear: false, data: mainEntitySelect}" title="{{:: ts('Entity')}}">
+    <button ng-if="$index > 0" type="button" class="btn btn-xs btn-danger-outline" ng-click="$ctrl.removeEntitySet($index)" title="{{:: ts('Remove search') }}">
+      <i class="crm-i fa-trash" role="img" aria-hidden="true"></i>
+    </button>
+  </div>
+</fieldset>
+<fieldset class="crm-search-set-add">
+  <legend class="sr-only">{{:: ts('Add Search')}}</legend>
+  <div class="form-inline">
+    <select class="form-control crm-auto-width" ng-model="controls.newSetOperation" ng-init="controls.newSetOperation = 'UNION DISTINCT'" ng-options="k as v for (k, v) in $ctrl.setOperations" title="{{:: ts('Set Operation')}}"></select>
+    <label for="crm-search-add-entity-set" class="sr-only">{{:: ts('Add Entity')}}</label>
+    <input id="crm-search-add-entity-set"
+           class="form-control crm-action-menu fa-plus"
+           crm-ui-select="{placeholder: ts('Entity'), data: mainEntitySelect}"
+           on-crm-ui-select="$ctrl.addEntitySet(controls.newSetOperation, selection)"
+           title="{{:: ts('Add Entity')}}">
+  </div>
+</fieldset>

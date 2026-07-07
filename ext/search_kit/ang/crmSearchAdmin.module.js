@@ -133,7 +133,7 @@
     })
 
     // Controller for creating a new search
-    .controller('searchCreate', function($scope, $routeParams, $location) {
+    .controller('searchCreate', function($scope, $routeParams, $location, $route, $rootScope) {
       searchEntity = $routeParams.entity;
       const ctrl = $scope.$ctrl = this;
       this.savedSearch = {
@@ -143,7 +143,17 @@
       // Changing entity will refresh the angular page
       $scope.$watch('$ctrl.savedSearch.api_entity', function(newEntity, oldEntity) {
         if (newEntity && oldEntity && newEntity !== oldEntity) {
-          $location.url('/create/' + newEntity + ($routeParams.label ? '?label=' + $routeParams.label : ''));
+          if (newEntity !== 'EntitySet') {
+            $location.url('/create/' + newEntity + ($routeParams.label ? '?label=' + $routeParams.label : ''));
+          } else {
+            const lastRoute = $route.current;
+            const un = $rootScope.$on('$locationChangeSuccess', function() {
+              $route.current = lastRoute;
+              un();
+            });
+            $location.url('/create/' + newEntity + ($routeParams.label ? '?label=' + $routeParams.label : ''));
+            searchEntity = newEntity;
+          }
         }
       });
     })
@@ -380,6 +390,17 @@
           }
         }
       }
+      // Get savedSearch, or if using EntitySet, the entitySet params in savedSearch format
+      function getSearchInfo(savedSearch, entitySetIndex) {
+        if (savedSearch?.api_entity === 'EntitySet') {
+          const entitySet = savedSearch.api_params.sets[entitySetIndex || 0];
+          return {
+            api_entity: entitySet[1],
+            api_params: entitySet[3],
+          };
+        }
+        return savedSearch;
+      }
       function parseExpr(expr) {
         if (!expr) {
           return;
@@ -400,13 +421,14 @@
       }
       function getDefaultLabel(col, savedSearch) {
         const info = parseExpr(col);
+        const searchInfo = getSearchInfo(savedSearch);
         let label = '';
         if (info.fn) {
           label = '(' + info.fn.title + ')';
         }
         info.args.forEach(arg => {
           if (arg.join) {
-            let join = getJoin(savedSearch, arg.join.alias);
+            let join = getJoin(searchInfo, arg.join.alias);
             label += (label ? ' ' : '') + join.label + ':';
           }
           if (arg.field) {
@@ -434,6 +456,7 @@
       }
       return {
         getEntity: getEntity,
+        getSearchInfo: getSearchInfo,
         getBaseEntity: function() {
           return getEntity(searchEntity);
         },

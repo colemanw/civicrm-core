@@ -1,0 +1,37 @@
+<table class="crm-search-select-fields crm-search-entity-set-select table table-bordered">
+  <thead>
+    <tr>
+      <th ng-repeat="set in $ctrl.savedSearch.api_params.sets">
+        <i class="crm-i {{:: getEntity(set[1]).icon }}" role="img" aria-hidden="true"></i>
+        {{ getEntity(set[1]).title_plural }}
+      </th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="col in $ctrl.savedSearch.api_params.select track by $index">
+      <td ng-repeat="set in $ctrl.savedSearch.api_params.sets">
+        <select class="form-control" ng-model="set[3].select[$parent.$index]"
+          crm-ui-select="{placeholder: ts('Add Field'), data: $ctrl.fieldsForEntitySet($index)}">
+          <option value="">{{ ts('- select -') }}</option>
+        </select>
+      </td>
+      <td>
+        <button type="button" class="btn btn-xs btn-danger-outline"
+                ng-click="$ctrl.clearParam('select', $index)"
+                title="{{:: ts('Remove row') }}">
+          <i class="crm-i fa-times" role="img" aria-hidden="true"></i>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="{{ $ctrl.savedSearch.api_params.sets.length + 1 }}">
+        <input class="form-control crm-action-menu fa-plus"
+               crm-ui-select="{placeholder: ts('Add Field'), data: $ctrl.fieldsForEntitySet(0)}"
+               on-crm-ui-select="$ctrl.addEntitySetRow($parent.$index, selection)">
+      </td>
+    </tr>
+  </tfoot>
+</table>

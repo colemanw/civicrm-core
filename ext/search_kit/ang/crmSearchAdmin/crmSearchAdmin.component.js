@@ -48,13 +48,15 @@
     this.afformPath = CRM.url('civicrm/admin/afform');
     this.debug = {};
 
+    this.setOperations = CRM.crmSearchAdmin.setOperations;
+
     this.mainTabs = [];
 
     const buildTabs = () => {
       this.mainTabs.length = 0;
 
       // Regular tabs
-      if (this.savedSearch.api_entity !== 'EntitySet') {
+      if (!this.isEntitySet()) {
         this.mainTabs.push(
           {
             key: 'for',
@@ -74,6 +76,23 @@
             icon: 'fa-filter',
             template: '~/crmSearchAdmin/crmSearch-conditions.html',
           }
+        );
+      }
+      // EntitySet tabs
+      else {
+        this.mainTabs.push(
+          {
+            key: 'entitySets',
+            title: ts('Search Multiple'),
+            icon: 'fa-search-plus',
+            template: '~/crmSearchAdmin/crmSearch-entitySets.html',
+          },
+          {
+            key: 'entitySetSelect',
+            title: ts('Select Fields'),
+            icon: 'fa-search',
+            template: '~/crmSearchAdmin/crmSearch-entitySetSelect.html',
+          },
         );
       }
 
@@ -191,6 +210,38 @@
 
     this.canAddSmartGroup = function() {
       return !ctrl.savedSearch.groups.length && !ctrl.savedSearch.is_template;
+    };
+
+    this.toggleEntitySet = () => {
+      if (this.isEntitySet()) {
+        // Convert back to single-entity: restore from the first set, discard the rest
+        const firstSet = this.savedSearch.api_params.sets[0];
+        this.savedSearch.api_entity = firstSet[1];
+        this.savedSearch.api_params = firstSet[3];
+        this.savedSearch.api_params.version = 4;
+      } else {
+        // Convert to EntitySet: move current entity/params into the first set
+        const entity = this.savedSearch.api_entity;
+        const params = this.savedSearch.api_params;
+        delete params.version;
+        this.savedSearch.api_params = {
+          version: 4,
+          select: [],
+          sets: [['UNION ALL', entity, 'get', params]],
+        };
+        this.savedSearch.api_entity = 'EntitySet';
+      }
+      buildTabs();
+    };
+
+    this.addEntitySet = (setOp, entity) => {
+      this.savedSearch.api_params.sets.push([setOp, entity, 'get', {}]);
+      buildTabs();
+    };
+
+    this.removeEntitySet = (index) => {
+      this.savedSearch.api_params.sets.splice(index, 1);
+      buildTabs();
     };
 
     function onChangeAnything(newVal, oldVal) {
@@ -631,6 +682,13 @@
 
     // Deletes an item from an array param
     this.clearParam = function(name, idx) {
+      // When using entity sets, also remove from the sets
+      if (name === 'select' && ctrl.isEntitySet()) {
+        ctrl.savedSearch.api_params.sets.forEach((set) => {
+          set[3].select.splice(idx, 1);
+        });
+      }
+
       ctrl.savedSearch.api_params[name].splice(idx, 1);
     };
 
@@ -720,9 +778,36 @@
       };
     };
 
-    this.getAllFields = function(suffix, allowedTypes, disabledIf, topJoin) {
+    this.isEntitySet = () => {
+      return ctrl.savedSearch.api_entity === 'EntitySet';
+    };
+
+    this.fieldsForEntitySet = (setIndex) => {
+      return () => {
+        const set = this.savedSearch.api_params.sets[setIndex];
+        return {
+          results: ctrl.getAllFields(':label', ['Field', 'Custom', 'Extra', 'Pseudo'], (key) => {
+            return set[3].select.includes(key);
+          }, null, setIndex)
+        };
+      };
+    };
+
+    this.addEntitySetRow = (colIndex, fieldName) => {
+      const sets = ctrl.savedSearch.api_params.sets;
+      const rowIndex = ctrl.savedSearch.api_params.select.length;
+      ctrl.savedSearch.api_params.select.push(fieldName);
+      sets.forEach((set, i) => {
+        set[3].select = set[3].select || [];
+        set[3].select[rowIndex] = (i === colIndex) ? fieldName : null;
+      });
+    };
+
+    this.getAllFields = function(suffix, allowedTypes, disabledIf, topJoin, entitySetIndex) {
       disabledIf = disabledIf || (() => false);
       allowedTypes = allowedTypes || ['Field', 'Custom', 'Extra', 'Filter'];
+
+      let searchInfo = searchMeta.getSearchInfo(ctrl.savedSearch);
 
       const getFieldOptionsForFields = (fields, prefix = '') => {
         return fields
@@ -759,7 +844,7 @@
       };
 
       const getFieldGroupForJoin = (join) => {
-        const joinInfo = searchMeta.getJoin(ctrl.savedSearch, join);
+        const joinInfo = searchMeta.getJoin(searchInfo, join);
         const joinEntity = searchMeta.getEntity(joinInfo.entity);
 
         return {
@@ -771,15 +856,15 @@
         };
       };
 
-      const mainEntity = searchMeta.getEntity(ctrl.savedSearch.api_entity);
-      const joins = (ctrl.savedSearch.api_params.join || []).map((joinDef) => joinDef[0]);
+      const mainEntity = searchMeta.getEntity(searchInfo.api_entity);
+      const joins = (searchInfo.api_params.join || []).map((joinDef) => joinDef[0]);
 
       const result = [];
 
       result.push({
         text: mainEntity.title_plural,
         icon: mainEntity.icon,
-        children: getFieldOptionsForEntity(ctrl.savedSearch.api_entity)
+        children: getFieldOptionsForEntity(searchInfo.api_entity)
       });
 
       // Include SearchKit's pseudo-fields if specifically requested
