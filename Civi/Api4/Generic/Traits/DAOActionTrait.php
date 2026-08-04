@@ -257,27 +257,25 @@ trait DAOActionTrait {
       if (!$field || $field['type'] !== 'Field') {
         continue;
       }
-      $fkApiEntity = $field['fk_entity'] ?? NULL;
+      $fkEntityName = $field['fk_entity'] ?? NULL;
+      $fkColumnName = $field['fk_column'] ?? 'id';
       // Dynamic FK (e.g. `entity_id` paired with `entity_table`): the target entity
       // isn't fixed, so resolve it from the sibling discriminator column's value,
       // which must already be present (as a plain value) in this same record.
-      if (!$fkApiEntity && !empty($field['dfk_entities'])) {
+      if (!$fkEntityName && !empty($field['dfk_entities'])) {
         $controlField = $field['input_attrs']['control_field'] ?? NULL;
         if (empty($record[$controlField])) {
           continue;
         }
-        $fkApiEntity = CoreUtil::getApiNameFromTableName($record[$controlField]);
+        $fkEntityName = CoreUtil::getApiNameFromTableName($record[$controlField]);
       }
-      if (!$fkApiEntity) {
+      if (!$fkEntityName) {
         continue;
       }
-      $fkDao = CoreUtil::getBAOFromApiName($fkApiEntity);
-      if (!$fkDao) {
-        throw new \CRM_Core_Exception('Failed to load ' . $fkApiEntity);
-      }
+      $fkEntity = \Civi::entity($fkEntityName);
       // Constrain search to the domain of the current entity
       $domainConstraint = NULL;
-      if (isset($fkDao::getSupportedFields()['domain_id'])) {
+      if ($fkEntity->getField('domain_id')) {
         if (!empty($record['domain_id'])) {
           $domainConstraint = $record['domain_id'] === 'current_domain' ? \CRM_Core_Config::domainID() : $record['domain_id'];
         }
@@ -285,17 +283,16 @@ trait DAOActionTrait {
           $domainConstraint = \CRM_Core_DAO::getFieldValue($this->getBaoName(), $record['id'], 'domain_id');
         }
       }
+      $conditions = [[$fkField, '=', $value]];
       if ($domainConstraint) {
-        $fkSearch = new $fkDao();
-        $fkSearch->domain_id = $domainConstraint;
-        $fkSearch->$fkField = $value;
-        $fkSearch->find(TRUE);
-        $record[$fieldName] = $fkSearch->id;
+        $conditions[] = ['domain_id', '=', $domainConstraint];
       }
-      // Simple lookup without all the fuss about domains
-      else {
-        $record[$fieldName] = \CRM_Core_DAO::getFieldValue($fkDao, $value, 'id', $fkField);
-      }
+      $fkResult = civicrm_api4($fkEntityName, 'get', [
+        'select' => [$fkColumnName],
+        'where' => $conditions,
+        'checkPermissions' => $this->getCheckPermissions(),
+      ]);
+      $record[$fieldName] = $fkResult->single()[$fkColumnName];
       unset($record[$key]);
     }
   }
