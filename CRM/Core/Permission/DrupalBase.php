@@ -73,6 +73,64 @@ class CRM_Core_Permission_DrupalBase extends CRM_Core_Permission_Base {
   }
 
   /**
+   * Given a permission string, check for access requirements
+   *
+   * @param string $str
+   *   The permission to check.
+   *
+   * @param int $userId
+   *
+   * @return bool
+   *   true if yes, else false
+   */
+  public function check($str, $userId = NULL) {
+    $str = $this->translatePermission($str, 'Drupal', [
+      'view user account' => 'access user profiles',
+      'administer users' => 'administer users',
+      'bypass maintenance mode' => 'access site in maintenance mode',
+    ]);
+    if ($str == CRM_Core_Permission::ALWAYS_DENY_PERMISSION) {
+      return FALSE;
+    }
+    if ($str == CRM_Core_Permission::ALWAYS_ALLOW_PERMISSION) {
+      return TRUE;
+    }
+    if (function_exists('user_access')) {
+      $account = NULL;
+      if ($userId || $userId === 0) {
+        $account = user_load($userId);
+      }
+      return user_access($str, $account);
+    }
+    return TRUE;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getAvailablePermissions() {
+    // We want to list *only* Drupal perms, so we'll *skip* Civi perms.
+    $allCorePerms = \CRM_Core_Permission::basicPermissions(TRUE);
+
+    $permissions = parent::getAvailablePermissions();
+    $modules = system_get_info('module');
+    foreach ($modules as $moduleName => $module) {
+      $prefix = isset($module['name']) ? ($module['name'] . ': ') : '';
+      foreach (module_invoke($moduleName, 'permission') ?? [] as $permName => $perm) {
+        if (isset($allCorePerms[$permName])) {
+          continue;
+        }
+
+        $permissions["Drupal:$permName"] = [
+          'title' => $prefix . strip_tags($perm['title']),
+          'description' => $perm['description'] ?? NULL,
+        ];
+      }
+    }
+    return $permissions;
+  }
+
+  /**
    * @inheritDoc
    */
   public function isModulePermissionSupported() {
