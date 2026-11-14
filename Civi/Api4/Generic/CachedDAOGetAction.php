@@ -61,10 +61,10 @@ class CachedDAOGetAction extends \Civi\Api4\Generic\DAOGetAction {
   /**
    * Toggle the in-memory cache
    *
-   * @param bool $useCache
+   * @param bool|null $useCache
    * @return $this
    */
-  public function setUseCache(bool $useCache): CachedDAOGetAction {
+  public function setUseCache(?bool $useCache): CachedDAOGetAction {
     $this->useCache = $useCache;
     return $this;
   }
@@ -175,6 +175,10 @@ class CachedDAOGetAction extends \Civi\Api4\Generic\DAOGetAction {
     $values = $this->getCachedRecords();
     $this->formatRawValues($values);
     $this->queryArray($values, $result);
+    // Match DAOGetAction::getObjects() rowCount behavior: when limit is reached without row_count, leave rowCount unset.
+    if ($this->getLimit() && $result->countFetched() >= $this->getLimit() && !in_array('row_count', $this->getSelect())) {
+      $result->rowCount = NULL;
+    }
   }
 
   protected function getCachedRecords(): array {
